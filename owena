@@ -1,0 +1,61 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+#include <signal.h>
+#include <unistd.h>
+#include <string.h>
+
+int main(){
+  void sigint_handler(int sig1);
+  char s[40];
+  int pipefds[2];
+  char buffer[40];
+  
+  if(signal(SIGINT, sigint_handler) == SIG_ERR){
+    perror("signal");
+    exit(1);
+  }
+  
+  if(pipe(pipefds) == -1){
+    perror("pipe");
+    exit(EXIT_FAILURE);
+  }
+  
+  printf("enter your favourite fruit:\n");
+  
+  if(fgets(s, sizeof(s), stdin) == NULL)
+    perror("ERROR!!!");
+  else{
+    s[strcspn(s, "\n")] = '\0';
+    printf("what you entered:%s\n", s);
+  }
+  
+  printf("\nMessage passes to child...\n");
+  write(pipefds[1], %s, sizeof(s));
+  printf("Done\n\n");
+  
+  printf("Reading message from parent...\n");
+  read(pipefds[0], &buffer, sizeof(buffer));
+  printf("Done.\n\n");
+  
+  for(int i = 1; i < 6; i++){
+    pid_t pid = fork();
+    
+    if(pid == 0){
+      printf("child process accept '%s' from parent\n", buffer);
+      exit(0);
+    }
+    else{
+      printf("_______W A I T________");
+      close(pipefds[1]);
+      close(pipefds[0]);
+      printf("\nchild process finished. \n\n");
+    }
+  }
+}
+
+void sigint_handler(int sig1){
+  printf("\tGO AWAY!\n");
+}
